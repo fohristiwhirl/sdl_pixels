@@ -80,7 +80,7 @@ func Init(width, height int) {
 
 	pixels = make([]byte, width * height * 4)
 
-	sdl.ShowCursor(sdl.DISABLE)
+	// sdl.ShowCursor(sdl.DISABLE)
 }
 
 func HandleEvents() {
