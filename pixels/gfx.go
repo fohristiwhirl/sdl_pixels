@@ -3,6 +3,8 @@ package pixels
 // These things are not thread-safe.
 // Also, only the goroutine that called Init() should call these, I think.
 
+// We seem to be assuming BGRA format...
+
 func Clear(r, g, b uint8) {
 	renderer.SetDrawColor(r, g, b, 255)
 	renderer.Clear()

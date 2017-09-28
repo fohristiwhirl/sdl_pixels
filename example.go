@@ -31,7 +31,7 @@ func main() {
 		for {
 			x := rand.Intn(WIDTH)
 			y := rand.Intn(HEIGHT)
-			pixels.Set(x, y, 255, 255, 0, 255)
+			pixels.Set(x, y, 255, 128, 0)
 
 			if time.Now().Sub(render_time) > 10 * time.Millisecond {
 				break
