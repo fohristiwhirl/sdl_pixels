@@ -1,9 +1,7 @@
 package main
 
 import (
-	"math"
 	"math/cmplx"
-	"math/rand"
 	"sync"
 	"time"
 	"./pixels"
@@ -28,6 +26,9 @@ func main() {
 
 	render_time := time.Now()
 
+	pixel_x := 0
+	pixel_y := 0
+
 	for {
 		pixels.HandleEvents()
 
@@ -40,14 +41,19 @@ func main() {
 		}
 
 		for {
-			var c complex128 = complex(rand.Float64() * 3.32 - 2.11, rand.Float64() * 2.48 - 1.24)
 
 			if threads_running >= THREADS {
-				<- done_chan					// Wait till a thread ends before starting a new one
-				go iterator(c)
+				<- done_chan						// Wait till a thread ends before starting a new one
+				go iterator(pixel_x, pixel_y)
 			} else {
-				go iterator(c)
+				go iterator(pixel_x, pixel_y)
 				threads_running += 1
+			}
+
+			pixel_x += 1
+			if pixel_x >= WIDTH {
+				pixel_x = 0
+				pixel_y += 1
 			}
 
 			if time.Now().Sub(render_time) > 20 * time.Millisecond {
@@ -62,25 +68,22 @@ func main() {
 	}
 }
 
-func iterator(c complex128) {
+func iterator(pixel_x, pixel_y int) {
 
+	x := float64(pixel_x - WIDTH / 2) / ZOOM
+	y := float64(pixel_y - HEIGHT / 2) / ZOOM
+
+	var c complex128 = complex(x, y)
 	var z complex128 = c
-	var list [MAX_ITERATIONS]complex128
 
 	for n := 0 ; n < MAX_ITERATIONS ; n++ {
 
 		z = z * z + c
-		list[n] = z
 
-		if cmplx.Abs(z) > 2 {               // The particle does escape, so draw the list of points
-			for i := 0 ; i <= n ; i++ {
-				pixel_x := int(math.Floor(real(list[i]) * ZOOM)) + X_OFFSET         // It's OK if x,y is out of bounds
-				pixel_y := int(math.Floor(imag(list[i]) * ZOOM)) + HEIGHT / 2
-				mutex.Lock()
-				pixels.Add(pixel_x, pixel_y, 2, 1, 0)
-				pixels.Add(pixel_x, HEIGHT - pixel_y, 2, 1, 0)
-				mutex.Unlock()
-			}
+		if cmplx.Abs(z) > 2 {               // The particle does escape
+			mutex.Lock()
+			pixels.Set(pixel_x, pixel_y, n, n, 0)
+			mutex.Unlock()
 			break
 		}
 	}
