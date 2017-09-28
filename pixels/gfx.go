@@ -5,14 +5,32 @@ package pixels
 
 // We seem to be assuming BGRA format...
 
-func Clear(r, g, b uint8) {
-	renderer.SetDrawColor(r, g, b, 255)
-	renderer.Clear()
+func Clear(r, g, b int) {
+
+	// The whole point of this package is for situations where we don't clear, but meh...
+
+	r_val := byte(clamp(r, 0, 255))
+	g_val := byte(clamp(g, 0, 255))
+	b_val := byte(clamp(b, 0, 255))
+
+	i := 0
+
+	for i < len(pixels) {
+		pixels[i] = b_val
+		i++
+		pixels[i] = g_val
+		i++
+		pixels[i] = r_val
+		i++
+		pixels[i] = 255
+		i++
+	}
 }
 
 func Set(x, y int, r, g, b int) {
 	if inbounds(x, y) {
 		i := y * logical_width * 4 + x * 4
+		pixels[i + 3] = 255
 		pixels[i + 2] = byte(clamp(r, 0, 255))
 		pixels[i + 1] = byte(clamp(g, 0, 255))
 		pixels[i + 0] = byte(clamp(b, 0, 255))
@@ -29,6 +47,7 @@ func Add(x, y int, r, g, b uint8) {
 		new_g := min(255, int(pixels[i + 1]) + int(g))
 		new_b := min(255, int(pixels[i + 0]) + int(b))
 
+		pixels[i + 3] = 255
 		pixels[i + 2] = byte(new_r)
 		pixels[i + 1] = byte(new_g)
 		pixels[i + 0] = byte(new_b)
@@ -36,10 +55,10 @@ func Add(x, y int, r, g, b uint8) {
 }
 
 func Present() {
-	virtue.Update(nil, pixels, int(logical_width) * 4)
+	texture.Update(nil, pixels, int(logical_width) * 4)
 	renderer.SetDrawColor(0, 0, 0, 255)
 	renderer.Clear()
-	renderer.Copy(virtue, nil, nil)
+	renderer.Copy(texture, nil, nil)
 	renderer.Present()
 }
 

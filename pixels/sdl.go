@@ -13,10 +13,10 @@ type key_map_query struct {
 var logical_width int
 var logical_height int
 
-var window *sdl.Window
-var renderer *sdl.Renderer
-var virtue *sdl.Texture
 var pixels []byte
+var texture *sdl.Texture
+var renderer *sdl.Renderer
+var window *sdl.Window
 
 var keyboard = make(map[string]bool)
 var key_map_query_chan = make(chan key_map_query)
@@ -73,7 +73,7 @@ func Init(width, height int) {
 	logical_width = width
 	logical_height = height
 
-	virtue, err = renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+	texture, err = renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, width, height)
 	if err != nil {
 		panic("Init(): " + err.Error())
 	}
