@@ -1,9 +1,17 @@
 package pixels
 
+// All the things should be called by the same goroutine as Init().
+
 import (
 	"runtime"
 	"github.com/veandco/go-sdl2/sdl"
 )
+
+type mouse_click struct {
+	OK				bool
+	X				int
+	Y				int
+}
 
 type key_map_query struct {
 	response_chan	chan bool
@@ -21,6 +29,8 @@ var window *sdl.Window
 var keyboard = make(map[string]bool)
 var key_map_query_chan = make(chan key_map_query)
 
+var last_mouse_click mouse_click
+
 var fn_chan = make(chan func())
 var shutdown_chan = make(chan bool)
 
@@ -37,6 +47,12 @@ func Shutdown() {
 
 func GetKeyDown(key string) bool {
 	return keyboard[key]
+}
+
+func GetLastMouseClick() mouse_click {
+	ret := last_mouse_click
+	last_mouse_click = mouse_click{false, 0, 0}
+	return ret
 }
 
 func Init(width, height int) {
@@ -96,6 +112,13 @@ func HandleEvents() {
 
 		case *sdl.KeyUpEvent:
 			keyboard[sdl.GetKeyName(t.Keysym.Sym)] = false
+
+		case *sdl.MouseButtonEvent:
+			if t.Type == sdl.MOUSEBUTTONDOWN {
+				last_mouse_click.OK = true
+				last_mouse_click.X = int(t.X)
+				last_mouse_click.Y = int(t.Y)
+			}
 		}
 	}
 }
