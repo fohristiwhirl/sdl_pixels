@@ -54,8 +54,20 @@ func Shutdown() {
 	sdl.Quit()
 }
 
+func get_key_down(key string, clear_flag bool) bool {
+	ret := keyboard[strings.ToLower(key)]
+	if clear_flag {
+		keyboard[strings.ToLower(key)] = false
+	}
+	return ret
+}
+
 func GetKeyDown(key string) bool {
-	return keyboard[strings.ToLower(key)]
+	return get_key_down(key, false)
+}
+
+func GetKeyDownClear(key string) bool {
+	return get_key_down(key, true)
 }
 
 func GetLastMouseClick() mouse_click {
