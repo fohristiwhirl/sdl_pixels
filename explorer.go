@@ -28,8 +28,8 @@ type pixel struct {
 
 type display struct {
 	pixels		[]*pixel
-	count		int			// How many of the pixels in the array are still live.
-	next_count	int			// Same, but for next iteration.
+	count		int			// How many of the pixels in the array are still live. (We arrange for them to be at the start.)
+	next_count	int			// How many live pixels there will be next loop.
 	index		int			// Our index for this iteration.
 	zoom		float64
 	centre		complex128
@@ -59,7 +59,16 @@ func (self *display) clear() {
 	self.index = 0
 }
 
-func (self *display) progress() {
+func (self *display) redraw() {
+	for i := 0; i < len(self.pixels); i++ {
+		pixel := self.pixels[i]
+		if pixel.escape > 0 {
+			sdl.Set(pixel.x, pixel.y, pixel.escape, pixel.escape / 4, 0)
+		}
+	}
+}
+
+func (self *display) progress(i int) {
 
 	// Use some local variables to avoid constant indirection...
 
@@ -68,7 +77,7 @@ func (self *display) progress() {
 	next_count := self.next_count
 	pixels := self.pixels
 
-	for n := 0; n < 1000; n++ {
+	for n := 0; n < i; n++ {
 
 		if index >= count {
 			index = 0
@@ -77,22 +86,20 @@ func (self *display) progress() {
 		}
 
 		pixel := pixels[index]
+		pixel.iterate(10)
 
 		if pixel.escape == 0 {
 
-			pixel.iterate(10)
+			// We want the "live" (undecided) pixels to be at the start of the slice.
+			// So swap this pixel into the first available slot.
 
-			if pixel.escape == 0 {
+			tmp := pixels[next_count]
+			pixels[next_count] = pixel
+			pixels[index] = tmp
+			next_count++
 
-				// We continually overwrite the low indices with the pixels that we need to work
-				// on next iteration, and keep a count of how many indices there are.
-
-				pixels[next_count] = pixel
-				next_count++
-
-			} else if pixel.escape > 0 {
-				sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
-			}
+		} else if pixel.escape > 0 {
+			sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
 		}
 
 		index++
@@ -167,6 +174,10 @@ func main() {
 			return
 		}
 
+		if sdl.GetKeyDown("r") {
+			state.redraw()
+		}
+
 		click := sdl.GetLastMouseClick()
 		if click.OK {
 			sdl.Clear(0, 0, 0)
@@ -178,7 +189,7 @@ func main() {
 			}
 		}
 
-		state.progress()
+		state.progress(1000)
 
 		select {
 
