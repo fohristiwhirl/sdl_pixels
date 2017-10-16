@@ -4,6 +4,8 @@ package pixels
 
 import (
 	"runtime"
+	"strings"
+
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -53,7 +55,7 @@ func Shutdown() {
 }
 
 func GetKeyDown(key string) bool {
-	return keyboard[key]
+	return keyboard[strings.ToLower(key)]
 }
 
 func GetLastMouseClick() mouse_click {
@@ -115,10 +117,10 @@ func HandleEvents() {
 			must_quit = true
 
 		case *sdl.KeyDownEvent:
-			keyboard[sdl.GetKeyName(t.Keysym.Sym)] = true
+			keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = true
 
 		case *sdl.KeyUpEvent:
-			keyboard[sdl.GetKeyName(t.Keysym.Sym)] = false
+			keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = false
 
 		case *sdl.MouseButtonEvent:
 			if t.Type == sdl.MOUSEBUTTONDOWN {
