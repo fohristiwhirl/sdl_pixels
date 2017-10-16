@@ -26,6 +26,95 @@ type pixel struct {
 	escape		int			// Negative: converges. Zero: unknown. Positive: escapes.
 }
 
+type display struct {
+	pixels		[]*pixel
+	count		int			// How many of the pixels in the array are still live.
+	next_count	int			// Same, but for next iteration.
+	index		int			// Our index for this iteration.
+	zoom		float64
+	centre		complex128
+}
+
+func (self *display) init() {
+	self.pixels = make([]*pixel, WIDTH * HEIGHT, WIDTH * HEIGHT)
+	self.zoom = 500
+	self.centre = complex(-0.5, 0)
+}
+
+func (self *display) clear() {
+	var i int
+	for x := 0; x < WIDTH; x++ {
+		for y := 0; y < HEIGHT; y++ {
+			p := new(pixel)
+			p.x = x
+			p.y = y
+			p.iterator.z = 0
+			p.iterator.c = self.locate(x, y)
+			self.pixels[i] = p
+			i++
+		}
+	}
+	self.count = WIDTH * HEIGHT
+	self.next_count = 0
+	self.index = 0
+}
+
+func (self *display) progress() {
+
+	// Use some local variables to avoid constant indirection...
+
+	index := self.index
+	count := self.count
+	next_count := self.next_count
+	pixels := self.pixels
+
+	for n := 0; n < 1000; n++ {
+
+		if index >= count {
+			index = 0
+			count = next_count
+			next_count = 0
+		}
+
+		pixel := pixels[index]
+
+		if pixel.escape == 0 {
+
+			pixel.iterate(10)
+
+			if pixel.escape == 0 {
+
+				// We continually overwrite the low indices with the pixels that we need to work
+				// on next iteration, and keep a count of how many indices there are.
+
+				pixels[next_count] = pixel
+				next_count++
+
+			} else if pixel.escape > 0 {
+				sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
+			}
+		}
+
+		index++
+	}
+
+	self.index = index
+	self.count = count
+	self.next_count = next_count
+}
+
+func (self *display) zoom_click(x, y int, multiplier float64) {
+	self.centre = self.locate(x, y)
+	self.zoom *= multiplier
+	self.clear()
+}
+
+func (self *display) locate(x, y int) complex128 {
+	dx := float64(x - WIDTH / 2) / self.zoom
+	dy := float64(y - HEIGHT / 2) / self.zoom
+	return complex(real(self.centre) + dx, imag(self.centre) + dy)
+}
+
 func (self *pixel) iterate(n uint) {
 
 	for i := uint(0); i < n; i++ {
@@ -55,43 +144,16 @@ func (self *pixel) iterate(n uint) {
 	}
 }
 
-func locate(x, y int, centre complex128, zoom float64) complex128 {
-	dx := float64(x - WIDTH / 2) / zoom
-	dy := float64(y - HEIGHT / 2) / zoom
-	return complex(real(centre) + dx, imag(centre) + dy)
-}
-
-func clear_pixel_list(list []*pixel, centre complex128, zoom float64) {
-	var index int
-	for x := 0; x < WIDTH; x++ {
-		for y := 0; y < HEIGHT; y++ {
-			p := new(pixel)
-			p.x = x
-			p.y = y
-			p.iterator.z = 0
-			p.iterator.c = locate(x, y, centre, zoom)
-			list[index] = p
-			index++
-		}
-	}
-}
-
 func main() {
-
-	var centre complex128 = complex(-0.5, 0)
-	var zoom float64 = 500
 
 	sdl.Init(WIDTH, HEIGHT)
 	defer sdl.Shutdown()
 
-	var list []*pixel = make([]*pixel, WIDTH * HEIGHT, WIDTH * HEIGHT)
-	clear_pixel_list(list, centre, zoom)
+	var state display
+	state.init()
+	state.clear()
 
 	ticker := time.NewTicker(50 * time.Millisecond)
-
-	var index int
-	var next_count int
-	var count int = WIDTH * HEIGHT
 
 	for {
 
@@ -108,47 +170,15 @@ func main() {
 		click := sdl.GetLastMouseClick()
 		if click.OK {
 			sdl.Clear(0, 0, 0)
-			centre = locate(click.X, click.Y, centre, zoom)
 
 			if click.Button == sdl.LEFT {
-				zoom *= 2
+				state.zoom_click(click.X, click.Y, 2)
 			} else {
-				zoom /= 2
+				state.zoom_click(click.X, click.Y, 0.5)
 			}
-
-			clear_pixel_list(list, centre, zoom)
-			count = WIDTH * HEIGHT
 		}
 
-		for n := 0; n < 1000; n++ {
-
-			if index >= count {
-				index = 0
-				count = next_count
-				next_count = 0
-			}
-
-			pixel := list[index]
-
-			if pixel.escape == 0 {
-
-				pixel.iterate(10)
-
-				if pixel.escape == 0 {
-
-					// We continually overwrite the low indices with the pixels that we need to work
-					// on next iteration, and keep a count of how many indices there are.
-
-					list[next_count] = pixel
-					next_count++
-
-				} else if pixel.escape > 0 {
-					sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
-				}
-			}
-
-			index++
-		}
+		state.progress()
 
 		select {
 
