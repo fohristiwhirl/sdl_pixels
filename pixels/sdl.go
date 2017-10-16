@@ -7,10 +7,17 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+const (
+	LEFT = 0
+	MIDDLE = 1
+	RIGHT = 2
+)
+
 type mouse_click struct {
 	OK				bool
 	X				int
 	Y				int
+	Button			int
 }
 
 type key_map_query struct {
@@ -51,7 +58,7 @@ func GetKeyDown(key string) bool {
 
 func GetLastMouseClick() mouse_click {
 	ret := last_mouse_click
-	last_mouse_click = mouse_click{false, 0, 0}
+	last_mouse_click = mouse_click{false, 0, 0, 0}
 	return ret
 }
 
@@ -118,6 +125,19 @@ func HandleEvents() {
 				last_mouse_click.OK = true
 				last_mouse_click.X = int(t.X)
 				last_mouse_click.Y = int(t.Y)
+
+				switch t.Button {
+
+				case sdl.BUTTON_LEFT:
+					last_mouse_click.Button = LEFT
+
+				case sdl.BUTTON_RIGHT:
+					last_mouse_click.Button = RIGHT
+
+				case sdl.BUTTON_MIDDLE:
+					last_mouse_click.Button = MIDDLE
+				}
+
 			}
 		}
 	}

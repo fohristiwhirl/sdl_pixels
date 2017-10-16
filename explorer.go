@@ -14,6 +14,7 @@ const (
 
 type iterator struct {
 	z			complex128
+	z_slow		complex128
 	c			complex128
 }
 
@@ -22,13 +23,31 @@ type pixel struct {
 	x			int
 	y			int
 	iteration	int
-	escape		int
+	escape		int			// Negative: converges. Zero: unknown. Positive: escapes.
 }
 
 func (self *pixel) iterate(n uint) {
+
 	for i := uint(0); i < n; i++ {
+
 		self.iteration++
+
 		self.z = self.z * self.z + self.c
+
+		if self.z == self.z_slow {
+			self.escape = -self.iteration
+			return
+		}
+
+		if self.iteration % 2 == 0 {
+			self.z_slow = self.z_slow * self.z_slow + self.c
+		}
+
+		if self.z == self.z_slow {
+			self.escape = -self.iteration
+			return
+		}
+
 		if cmplx.Abs(self.z) > 2 {
 			self.escape = self.iteration
 			return
@@ -90,7 +109,13 @@ func main() {
 		if click.OK {
 			sdl.Clear(0, 0, 0)
 			centre = locate(click.X, click.Y, centre, zoom)
-			zoom *= 2
+
+			if click.Button == sdl.LEFT {
+				zoom *= 2
+			} else {
+				zoom /= 2
+			}
+
 			clear_pixel_list(list, centre, zoom)
 			count = WIDTH * HEIGHT
 		}
@@ -106,16 +131,19 @@ func main() {
 			pixel := list[index]
 
 			if pixel.escape == 0 {
+
 				pixel.iterate(10)
-				if pixel.escape > 0 {
-					sdl.Set(pixel.x, pixel.y, pixel.escape, pixel.escape / 4, 0)
-				} else {
+
+				if pixel.escape == 0 {
 
 					// We continually overwrite the low indices with the pixels that we need to work
 					// on next iteration, and keep a count of how many indices there are.
 
 					list[next_count] = pixel
 					next_count++
+
+				} else if pixel.escape > 0 {
+					sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
 				}
 			}
 
