@@ -33,12 +33,15 @@ type display struct {
 	index		int			// Our index for this iteration.
 	zoom		float64
 	centre		complex128
+	offset		int
+	divisor		int
 }
 
 func (self *display) init() {
 	self.pixels = make([]*pixel, WIDTH * HEIGHT, WIDTH * HEIGHT)
 	self.zoom = 500
 	self.centre = complex(-0.5, 0)
+	self.divisor = 1
 }
 
 func (self *display) clear() {
@@ -59,12 +62,16 @@ func (self *display) clear() {
 	self.index = 0
 }
 
+func (self *display) draw(p *pixel) {
+	if p.escape > 0 {
+		sdl.Set(p.x, p.y, (p.escape / self.divisor + self.offset) / 4, p.escape / self.divisor + self.offset, 0)
+	}
+}
+
 func (self *display) redraw() {
 	for i := 0; i < len(self.pixels); i++ {
 		pixel := self.pixels[i]
-		if pixel.escape > 0 {
-			sdl.Set(pixel.x, pixel.y, pixel.escape, pixel.escape / 4, 0)
-		}
+		self.draw(pixel)
 	}
 }
 
@@ -99,7 +106,7 @@ func (self *display) progress(i int) {
 			next_count++
 
 		} else if pixel.escape > 0 {
-			sdl.Set(pixel.x, pixel.y, pixel.escape / 4, pixel.escape, 0)
+			self.draw(pixel)
 		}
 
 		index++
@@ -174,7 +181,30 @@ func main() {
 			return
 		}
 
-		if sdl.GetKeyDown("r") {
+		if sdl.GetKeyDownClear("r") {
+			state.redraw()
+		}
+
+		if sdl.GetKeyDownClear("Keypad -") {
+			state.offset -= 5
+			state.redraw()
+		}
+
+		if sdl.GetKeyDownClear("Keypad +") {
+			state.offset += 5
+			state.redraw()
+		}
+
+		if sdl.GetKeyDownClear("Keypad /") {
+			state.divisor += 1
+			state.redraw()
+		}
+
+		if sdl.GetKeyDownClear("Keypad *") {
+			state.divisor -= 1
+			if state.divisor < 1 {
+				state.divisor = 1
+			}
 			state.redraw()
 		}
 
