@@ -205,6 +205,10 @@ func main() {
 			state.redraw()
 		}
 
+		if sdl.GetKeyDownClear("s") {
+			sdl.DumpPNG("mandelbrot.png")
+		}
+
 		if sdl.GetKeyDownClear("Keypad -") {
 			state.offset -= 5
 			state.redraw()

@@ -119,6 +119,8 @@ func Init(width, height int) {
 
 	pixels = make([]byte, width * height * 4)
 
+	Clear(0, 0, 0)
+
 	// sdl.ShowCursor(sdl.DISABLE)
 }
 

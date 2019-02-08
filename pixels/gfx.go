@@ -37,6 +37,14 @@ func Set(x, y int, r, g, b int) {
 	}
 }
 
+func Get(x, y int) (r, g, b int) {
+	if inbounds(x, y) == false {
+		return 0, 0, 0
+	}
+	i := y * logical_width * 4 + x * 4
+	return int(pixels[i + 2]), int(pixels[i + 1]), int(pixels[i + 0])
+}
+
 func Add(x, y int, r, g, b uint8) {
 
 	if inbounds(x, y) {
