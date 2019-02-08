@@ -14,11 +14,11 @@ const (
 
 func main() {
 
-	i := 0
-	starttime := time.Now()
-
 	sdl.Init(WIDTH, HEIGHT)
 	defer sdl.Shutdown()
+
+	i := 0
+	starttime := time.Now()
 
 	defer func() {
 		duration := time.Now().Sub(starttime)
@@ -29,9 +29,9 @@ func main() {
 
 		i++
 
-		for x := 0; x < WIDTH; x += 1 {
+		for x := 0; x < WIDTH; x += 4 {
 
-			for y := 0; y < HEIGHT; y += 1 {
+			for y := 0; y < HEIGHT; y += 4 {
 
 				r := (x + y) % i
 				g := (x * y) % i
