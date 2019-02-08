@@ -119,7 +119,7 @@ func Init(width, height int) {
 
 	pixels = make([]byte, width * height * 4)
 
-	Clear(0, 0, 0)
+	Clear(0, 0, 0)		// Sets the alpha to 255
 
 	// sdl.ShowCursor(sdl.DISABLE)
 }
