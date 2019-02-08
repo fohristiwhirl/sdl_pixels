@@ -93,10 +93,12 @@ func Init(width, height int) {
 	// We use fullscreen at whatever the current resolution is, then use SetLogicalSize()
 	// so that we can pretend it's whatever we want it to be.
 
-	var dm sdl.DisplayMode
-	sdl.GetDesktopDisplayMode(0, &dm)
+	dm, err := sdl.GetDesktopDisplayMode(0)
+	if err != nil {
+		panic("sdl.GetDesktopDisplayMode(0): " + err.Error())
+	}
 
-	window, err = sdl.CreateWindow("SDL Window", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, int(dm.W), int(dm.H), sdl.WINDOW_FULLSCREEN)
+	window, err = sdl.CreateWindow("SDL Window", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, dm.W, dm.H, sdl.WINDOW_FULLSCREEN)
 	if err != nil {
 		panic("Init(): " + err.Error())
 	}
@@ -106,11 +108,11 @@ func Init(width, height int) {
 		panic("Init(): " + err.Error())
 	}
 
-	renderer.SetLogicalSize(width, height)
+	renderer.SetLogicalSize(int32(width), int32(height))
 	logical_width = width
 	logical_height = height
 
-	texture, err = renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, width, height)
+	texture, err = renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, int32(width), int32(height))
 	if err != nil {
 		panic("Init(): " + err.Error())
 	}
@@ -128,11 +130,13 @@ func HandleEvents() {
 		case *sdl.QuitEvent:
 			must_quit = true
 
-		case *sdl.KeyDownEvent:
-			keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = true
+		case *sdl.KeyboardEvent:
 
-		case *sdl.KeyUpEvent:
-			keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = false
+			if t.Type == sdl.KEYDOWN {
+				keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = true
+			} else if t.Type == sdl.KEYUP {
+				keyboard[strings.ToLower(sdl.GetKeyName(t.Keysym.Sym))] = false
+			}
 
 		case *sdl.MouseButtonEvent:
 			if t.Type == sdl.MOUSEBUTTONDOWN {
